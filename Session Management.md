@@ -81,18 +81,16 @@ So to access the client's information, we use the session ID they pass in a cook
 Fortunately express has a session management module. We will configure our redis client in code and pass it to express. From then on express will handle managing the session for us (for the most part). It will expose a `session` object on the `request` object that we can access. For example:
 
 ```javascript
-async login (username, password) {
-    const result = await this.UserModel.getPasswordHash(username);
-    // getPasswordHash() returns undefined if the username does not exist
-    let isVerified;
-    if (result === undefined) {
-        isVerified = false;
-    } else {
-        const isVerified = await this.verifyPassword(result.passwordHash, password);
+app.post("/login", errorHandler( async (req, res) => {
+    if (req.body === undefined || (!req.body.username || !req.body.password)) {
+        return res.sendStatus(400);
     }
+    const {username, password} = req.body;
+    const isVerified = await Auth.login(username, password);
     req.session.isAuthenticated = isVerified;
-    return isVerified;
-}
+    const status = isVerified ? 500 : 401;
+    res.sendStatus(status);
+}));
 ```
 
 Will associate the `isAuthenticated` attribute to that specific client's session ID. Then anytime we get a request we can use:
